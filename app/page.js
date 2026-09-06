@@ -59,11 +59,9 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <div className="bg-gray-100 border border-gray-200 aspect-video flex items-center justify-center">
-            <span className="mono text-[11px] text-gray-400 tracking-widest uppercase">
-              Image Placeholder
-            </span>
-          </div>
+         <div className="bg-gray-100 border border-gray-200 aspect-video flex items-center justify-center overflow-hidden">
+  <img src="/TEW-works.png" alt="About Us" className="object-cover h-full w-full" />
+</div>
         </div>
       </section>
 
