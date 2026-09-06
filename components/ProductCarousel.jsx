@@ -33,17 +33,17 @@ function ProductDetail({ item, onBack }) {
 
       <div className="grid lg:grid-cols-[48%_52%] gap-10 lg:gap-16 items-start">
         {/* LEFT — thumbnail strip + main image + zoom panel */}
-        <div className="flex gap-4 relative">
-          {/* Vertical thumbnail strip */}
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 relative">
+          {/* Thumbnail strip — horizontal scroll on mobile, vertical column on sm+ */}
           <div
-            className="flex flex-col gap-3 flex-shrink-0 max-h-[600px] overflow-y-auto"
+            className="flex sm:flex-col gap-3 flex-shrink-0 overflow-x-auto sm:overflow-x-visible sm:overflow-y-auto sm:max-h-[500px] pb-1 sm:pb-0"
             style={{ scrollbarWidth: "thin" }}
           >
             {thumbs.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setActiveThumb(i)}
-                className={`w-[60px] h-[60px] border-2 flex-shrink-0 relative overflow-hidden transition-all ${
+                className={`w-[52px] h-[52px] sm:w-[60px] sm:h-[60px] border-2 flex-shrink-0 relative overflow-hidden transition-all ${
                   activeThumb === i
                     ? "border-red-600 shadow-md scale-105"
                     : "border-gray-200 hover:border-gray-400"
@@ -60,11 +60,10 @@ function ProductDetail({ item, onBack }) {
             ))}
           </div>
 
-          {/* Main image — hover triggers zoom */}
+          {/* Main image — hover triggers zoom (desktop only) */}
           <div
             ref={imageRef}
-            className="flex-1 bg-gray-100 border border-gray-200 relative overflow-hidden cursor-crosshair"
-            style={{ height: "500px" }}
+            className="flex-1 bg-gray-100 border border-gray-200 relative overflow-hidden sm:cursor-crosshair h-[300px] sm:h-[420px] lg:h-[500px]"
             onMouseEnter={() => setShowZoom(true)}
             onMouseLeave={() => setShowZoom(false)}
             onMouseMove={handleMouseMove}
@@ -76,10 +75,10 @@ function ProductDetail({ item, onBack }) {
               className="object-contain p-4 pointer-events-none"
             />
 
-            {/* Lens overlay — shows which area is zoomed */}
+            {/* Lens overlay — shows which area is zoomed (desktop only) */}
             {showZoom && (
               <div
-                className="absolute w-24 h-24 border-2 border-red-500 bg-red-500/10 pointer-events-none"
+                className="absolute w-24 h-24 border-2 border-red-500 bg-red-500/10 pointer-events-none hidden sm:block"
                 style={{
                   left: `calc(${position.x}% - 48px)`,
                   top: `calc(${position.y}% - 48px)`,
@@ -88,7 +87,7 @@ function ProductDetail({ item, onBack }) {
             )}
           </div>
 
-          {/* Zoom panel — appears to the RIGHT of the image area */}
+          {/* Zoom panel — appears to the RIGHT of the image area, desktop only */}
           {showZoom && (
             <div
               className="absolute left-full ml-4 top-0 w-[380px] h-[500px] bg-white border border-gray-200 shadow-2xl overflow-hidden z-30 pointer-events-none hidden xl:block"

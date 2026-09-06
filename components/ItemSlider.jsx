@@ -79,7 +79,10 @@ export default function ItemSlider({ items }) {
                 onMouseEnter={() => setOpenTip(i)}
                 onMouseLeave={() => setOpenTip(null)}
               >
-                <button className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase text-white bg-gray-900 hover:bg-red-600 transition-colors px-4 py-2.5">
+                <button
+                  onClick={() => setOpenTip((cur) => (cur === i ? null : i))}
+                  className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-widest uppercase text-white bg-gray-900 hover:bg-red-600 transition-colors px-4 py-2.5"
+                >
                   <Info size={12} /> Read More
                 </button>
 

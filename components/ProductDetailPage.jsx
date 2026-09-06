@@ -63,18 +63,18 @@ export default function ProductDetailPage({ item, category, categoryName, produc
         <div className="grid lg:grid-cols-2 gap-8 xl:gap-14 items-start">
 
           {/* LEFT — thumbnails + main image */}
-          <div className="flex gap-3">
-            {/* Vertical thumbnail strip — only show if more than 1 image */}
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
+            {/* Thumbnail strip — horizontal scroll on mobile, vertical column on sm+ */}
             {thumbs.length > 1 && (
               <div
-                className="flex flex-col gap-2 flex-shrink-0 overflow-y-auto"
+                className="flex sm:flex-col gap-2 flex-shrink-0 overflow-x-auto sm:overflow-x-visible sm:overflow-y-auto pb-1 sm:pb-0"
                 style={{ maxHeight: "440px", scrollbarWidth: "thin" }}
               >
                 {thumbs.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setActiveThumb(i)}
-                    className={`w-[56px] h-[56px] flex-shrink-0 relative overflow-hidden border-2 transition-all ${
+                    className={`w-[52px] h-[52px] sm:w-[56px] sm:h-[56px] flex-shrink-0 relative overflow-hidden border-2 transition-all ${
                       activeThumb === i
                         ? "border-red-600 shadow-sm scale-105"
                         : "border-gray-200 hover:border-gray-400"
@@ -87,10 +87,9 @@ export default function ProductDetailPage({ item, category, categoryName, produc
             )}
 
             {/* Main image */}
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               <div
-                className="bg-gray-100 border border-gray-200 relative overflow-hidden cursor-crosshair w-full"
-                style={{ height: "440px" }}
+                className="bg-gray-100 border border-gray-200 relative overflow-hidden sm:cursor-crosshair w-full h-[300px] sm:h-[380px] lg:h-[440px]"
                 onMouseEnter={() => setShowZoom(true)}
                 onMouseLeave={() => setShowZoom(false)}
                 onMouseMove={handleMouseMove}
@@ -110,10 +109,10 @@ export default function ProductDetailPage({ item, category, categoryName, produc
                   </div>
                 )}
 
-                {/* Lens */}
+                {/* Lens (desktop only) */}
                 {showZoom && thumbs.length > 0 && (
                   <div
-                    className="absolute w-20 h-20 border-2 border-red-500 bg-red-500/10 pointer-events-none"
+                    className="absolute w-20 h-20 border-2 border-red-500 bg-red-500/10 pointer-events-none hidden sm:block"
                     style={{
                       left: `calc(${position.x}% - 40px)`,
                       top: `calc(${position.y}% - 40px)`,
@@ -125,7 +124,7 @@ export default function ProductDetailPage({ item, category, categoryName, produc
                 {thumbs.length > 1 && activeThumb > 0 && (
                   <button
                     onClick={() => setActiveThumb((i) => i - 1)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-red-600 transition-all z-20"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-red-600 transition-all z-20"
                     aria-label="Previous image"
                   >
                     <ChevronLeft size={20} />
@@ -136,7 +135,7 @@ export default function ProductDetailPage({ item, category, categoryName, produc
                 {thumbs.length > 1 && activeThumb < thumbs.length - 1 && (
                   <button
                     onClick={() => setActiveThumb((i) => i + 1)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-red-600 transition-all z-20"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 hover:bg-white shadow-md flex items-center justify-center text-gray-700 hover:text-red-600 transition-all z-20"
                     aria-label="Next image"
                   >
                     <ChevronRight size={20} />
