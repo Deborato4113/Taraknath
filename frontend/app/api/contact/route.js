@@ -22,6 +22,20 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = "deboratochaudhury2023@gmail.com";
 const FROM_EMAIL = "Taraknath Website <onboarding@resend.dev>";
 
+// Mirrors the PRODUCT_CATEGORIES keys in components/ContactSection.jsx —
+// duplicated here (rather than imported) because that file also carries
+// the full item lists, which this route doesn't need. Just used to turn
+// the submitted category key (e.g. "fabrication") into a readable label
+// for the email.
+const CATEGORY_LABELS = {
+  shipyard: "Shipyard Products",
+  deck: "Deck Machinery",
+  bronze: "Bronze Items",
+  bearing: "White Metal Lining Bearing and Thrust Pads",
+  babbit: "Babbit Lining Bearing and Thrust Pads",
+  fabrication: "Fabrication and Machining",
+};
+
 export async function POST(request) {
   if (!RESEND_API_KEY) {
     return Response.json(
@@ -37,6 +51,8 @@ export async function POST(request) {
     const email = formData.get("email") || "";
     const phone = formData.get("phone") || "";
     const message = formData.get("message") || "";
+    const category = formData.get("category") || "";
+    const product = formData.get("product") || "";
     const file = formData.get("attachment"); // a File, or null
 
     const html = `
@@ -44,6 +60,8 @@ export async function POST(request) {
       <p><strong>Name:</strong> ${escapeHtml(firstName)} ${escapeHtml(lastName)}</p>
       <p><strong>Email:</strong> ${escapeHtml(email)}</p>
       <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
+      ${category ? `<p><strong>Category:</strong> ${escapeHtml(CATEGORY_LABELS[category] || category)}</p>` : ""}
+      ${product ? `<p><strong>Product:</strong> ${escapeHtml(product)}</p>` : ""}
       <p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, "<br>")}</p>
     `;
 
