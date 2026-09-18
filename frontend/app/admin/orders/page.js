@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-const STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+// PENDING, PAID and PROCESSING are set automatically by the payment system
+// (see backend/src/routes/orders.js) — not selectable here. This mirrors
+// the same rule enforced server-side in backend/src/routes/admin.js.
+const ADMIN_SETTABLE_STATUSES = ["SHIPPED", "DELIVERED", "CANCELLED"];
 
 const STATUS_COLORS = {
   PENDING: "bg-gray-100 text-gray-600",
@@ -12,6 +15,17 @@ const STATUS_COLORS = {
   DELIVERED: "bg-green-100 text-green-700",
   CANCELLED: "bg-red-100 text-red-700",
 };
+
+// What the admin is allowed to move an order to FROM its current status —
+// mirrors the validation in backend/src/routes/admin.js so the dropdown
+// never offers a choice the server would reject.
+function nextStatusOptions(currentStatus) {
+  if (currentStatus === "PENDING") return ["CANCELLED"]; // not paid yet — can't ship/deliver
+  if (currentStatus === "PAID" || currentStatus === "PROCESSING" || currentStatus === "SHIPPED") {
+    return ADMIN_SETTABLE_STATUSES;
+  }
+  return []; // DELIVERED / CANCELLED are terminal — nothing further to set
+}
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState(null);
@@ -102,7 +116,13 @@ export default function AdminOrdersPage() {
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     className="border border-gray-300 text-xs px-2 py-1.5 focus:outline-none focus:border-blue-800 disabled:opacity-50"
                   >
-                    {STATUSES.map((s) => (
+                    {/* Current status is always shown, even if it's not
+                        one the admin can pick — this is just so the
+                        select's value has a matching <option>. */}
+                    {!nextStatusOptions(order.status).includes(order.status) && (
+                      <option value={order.status} disabled>{order.status}</option>
+                    )}
+                    {nextStatusOptions(order.status).map((s) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>

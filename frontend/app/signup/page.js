@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
+import Header from "../../components/Header";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -68,19 +69,7 @@ function SignupPageInner() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="bg-gray-900 text-white">
-        <div className="max-w-md mx-auto px-5 py-4 flex justify-center">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-            </div>
-            <span className="text-xs font-bold tracking-widest uppercase heading-font">
-              Taraknath Engineering Works
-            </span>
-          </Link>
-        </div>
-      </div>
-      <div className="h-1 w-full bg-blue-800" />
+      <Header />
 
       <div className="flex-1 flex items-center justify-center px-5 py-16">
         <div className="w-full max-w-md">

@@ -169,7 +169,12 @@ router.post("/verify", async (req, res) => {
 
       await tx.order.update({
         where: { id: order.id },
-        data: { status: "PAID" },
+        // Goes straight to PROCESSING rather than lingering at PAID —
+        // "payment received" and "now being prepared" happen at the same
+        // moment here, and neither PAID nor PROCESSING is something an
+        // admin sets manually (see admin.js's status route). The admin's
+        // first manual action on an order is marking it SHIPPED.
+        data: { status: "PROCESSING" },
       });
 
       const orderItems = await tx.orderItem.findMany({ where: { orderId: order.id } });

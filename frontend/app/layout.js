@@ -1,6 +1,8 @@
 import "./globals.css";
+import { Suspense } from "react";
 import AuthProvider from "../components/AuthProvider";
 import { CartProvider } from "../components/CartContext";
+import NavigationProgress from "../components/NavigationProgress";
 
 // Falls back to localhost in dev; set NEXT_PUBLIC_SITE_URL to your real
 // production domain (e.g. https://www.taraknathengineeringworks.com) once
@@ -40,7 +42,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body><AuthProvider><CartProvider>{children}</CartProvider></AuthProvider></body>
+      <body>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
+        <AuthProvider><CartProvider>{children}</CartProvider></AuthProvider>
+      </body>
     </html>
   );
 }

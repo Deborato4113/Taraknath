@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useCart } from "../../components/CartContext";
+import Header from "../../components/Header";
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
@@ -114,25 +115,15 @@ export default function CheckoutPage() {
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
 
       <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
-        <div className="bg-gray-900 text-white">
-          <div className="max-w-4xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={14} /> Back
-            </button>
-            <Link href="/" className="flex items-center gap-3">
-              <div className="w-8 h-8 relative flex-shrink-0">
-                <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-              </div>
-              <span className="hidden sm:block text-xs font-bold tracking-widest uppercase heading-font">
-                Taraknath Engineering Works
-              </span>
-            </Link>
-          </div>
+        <Header />
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 py-3">
+          <button
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-500 hover:text-red-600 transition-colors"
+          >
+            <ArrowLeft size={14} /> Back
+          </button>
         </div>
-        <div className="h-1 w-full bg-blue-800" />
 
         <div className="flex-1 max-w-2xl mx-auto w-full px-5 sm:px-8 py-10 sm:py-14">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 heading-font uppercase mb-8">

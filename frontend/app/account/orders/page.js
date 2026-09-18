@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { RotateCcw } from "lucide-react";
+import Header from "../../../components/Header";
 
 const STATUS_COLORS = {
   PENDING: "bg-gray-100 text-gray-600",
@@ -60,19 +61,7 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="bg-gray-900 text-white">
-        <div className="max-w-2xl mx-auto px-5 sm:px-8 py-4 flex justify-center">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-            </div>
-            <span className="text-xs font-bold tracking-widest uppercase heading-font">
-              Taraknath Engineering Works
-            </span>
-          </Link>
-        </div>
-      </div>
-      <div className="h-1 w-full bg-blue-800" />
+      <Header />
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-5 sm:px-8 py-16">
         <p className="mono text-[11px] font-semibold tracking-[0.3em] text-red-600 uppercase mb-2 text-center">
@@ -102,7 +91,9 @@ export default function OrderHistoryPage() {
               <div key={order.id} className="border border-gray-200 hover:border-blue-800 transition-colors px-4 py-4">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <Link href={`/order-confirmation/${order.id}`} className="flex-1 min-w-[160px]">
-                    <p className="text-sm font-semibold text-gray-900 mono">{order.id}</p>
+                    <p className="text-sm font-semibold text-gray-900 mono">
+                      <span className="text-gray-400 font-normal">Order ID:</span> {order.id}
+                    </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {new Date(order.createdAt).toLocaleDateString("en-IN", {
                         year: "numeric", month: "short", day: "numeric",

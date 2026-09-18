@@ -201,7 +201,12 @@ router.get("/categories", async (req, res) => {
 // ORDERS
 // ─────────────────────────────────────────────
 
-const VALID_STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+// PENDING, PAID and PROCESSING are all set automatically by the system
+// (order creation and successful payment verification — see orders.js) and
+// are deliberately NOT in this list: an admin should never be able to mark
+// something "paid" by hand. This is only what the status dropdown may set.
+const ADMIN_SETTABLE_STATUSES = ["SHIPPED", "DELIVERED", "CANCELLED"];
+const ALL_STATUSES = ["PENDING", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 // GET /api/admin/orders
 router.get("/orders", async (req, res) => {
@@ -226,8 +231,32 @@ router.get("/orders", async (req, res) => {
 router.put("/orders/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
-    if (!VALID_STATUSES.includes(status)) {
-      return res.status(400).json({ error: `status must be one of ${VALID_STATUSES.join(", ")}` });
+
+    if (!ADMIN_SETTABLE_STATUSES.includes(status)) {
+      if (ALL_STATUSES.includes(status)) {
+        return res.status(400).json({
+          error: `${status} is set automatically by the payment system and can't be set manually. You can set: ${ADMIN_SETTABLE_STATUSES.join(", ")}.`,
+        });
+      }
+      return res.status(400).json({ error: `status must be one of ${ADMIN_SETTABLE_STATUSES.join(", ")}` });
+    }
+
+    const existing = await prisma.order.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ error: "Order not found" });
+
+    // Can't ship or deliver something that was never actually paid for.
+    if (
+      (status === "SHIPPED" || status === "DELIVERED") &&
+      !["PAID", "PROCESSING", "SHIPPED"].includes(existing.status)
+    ) {
+      return res.status(400).json({
+        error: `Can't mark an order as ${status} while it's still ${existing.status} — payment hasn't been confirmed yet.`,
+      });
+    }
+    // Once delivered, cancelling no longer makes sense — use a refund
+    // process outside the order status instead.
+    if (status === "CANCELLED" && existing.status === "DELIVERED") {
+      return res.status(400).json({ error: "Can't cancel an order that's already been delivered." });
     }
 
     const order = await prisma.order.update({

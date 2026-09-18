@@ -2,8 +2,38 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
+import Header from "../../../components/Header";
+
+// What to show depends on the order's actual status — this used to show
+// "Order Confirmed" unconditionally for any order fetched, including ones
+// whose payment never went through (still PENDING). Now it reflects what
+// actually happened.
+const STATUS_DISPLAY = {
+  PENDING: {
+    icon: Clock,
+    iconClass: "text-amber-500",
+    heading: "Payment Pending",
+    message: "We haven't received payment confirmation for this order yet. If you completed payment, this can take a few minutes to update — otherwise the payment may not have gone through.",
+    totalLabel: "Total Due",
+  },
+  CANCELLED: {
+    icon: XCircle,
+    iconClass: "text-red-600",
+    heading: "Order Cancelled",
+    message: "This order has been cancelled.",
+    totalLabel: "Total",
+  },
+  // PAID, PROCESSING, SHIPPED, DELIVERED all mean payment succeeded —
+  // same "confirmed" display for all of them.
+  DEFAULT: {
+    icon: CheckCircle2,
+    iconClass: "text-green-600",
+    heading: "Order Confirmed",
+    message: null,
+    totalLabel: "Total Paid",
+  },
+};
 
 export default function OrderConfirmationPage({ params }) {
   const [order, setOrder] = useState(null);
@@ -19,21 +49,12 @@ export default function OrderConfirmationPage({ params }) {
       .catch(() => setError("Could not load order details."));
   }, [params.orderId]);
 
+  const display = order ? (STATUS_DISPLAY[order.status] || STATUS_DISPLAY.DEFAULT) : null;
+  const Icon = display?.icon;
+
   return (
     <div className="min-h-screen bg-white flex flex-col" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <div className="bg-gray-900 text-white">
-        <div className="max-w-2xl mx-auto px-5 sm:px-8 py-4 flex justify-center">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-            </div>
-            <span className="text-xs font-bold tracking-widest uppercase heading-font">
-              Taraknath Engineering Works
-            </span>
-          </Link>
-        </div>
-      </div>
-      <div className="h-1 w-full bg-blue-800" />
+      <Header />
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-5 sm:px-8 py-16 text-center">
         {error ? (
@@ -42,13 +63,17 @@ export default function OrderConfirmationPage({ params }) {
           <p className="text-gray-400 text-sm">Loading order details...</p>
         ) : (
           <>
-            <CheckCircle2 size={48} className="text-green-600 mx-auto mb-4" />
+            <Icon size={48} className={`${display.iconClass} mx-auto mb-4`} />
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 heading-font uppercase mb-2">
-              Order Confirmed
+              {display.heading}
             </h1>
-            <p className="text-gray-500 mb-8">
+            <p className="text-gray-500 mb-2">
               Order ID: <span className="font-mono">{order.id}</span>
             </p>
+            {display.message && (
+              <p className="text-gray-500 text-sm max-w-md mx-auto mb-8">{display.message}</p>
+            )}
+            {!display.message && <div className="mb-8" />}
 
             <div className="border border-gray-200 text-left mb-8">
               {order.items.map((item) => (
@@ -65,17 +90,27 @@ export default function OrderConfirmationPage({ params }) {
                 </div>
               ))}
               <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-sm font-bold">
-                <span>Total Paid</span>
+                <span>{display.totalLabel}</span>
                 <span>₹{Number(order.total).toLocaleString("en-IN")}</span>
               </div>
             </div>
 
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center gap-2 bg-gray-900 hover:bg-red-600 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
-            >
-              Back to Home
-            </Link>
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              {order.status === "PENDING" && (
+                <Link
+                  href="/checkout"
+                  className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
+                >
+                  Try Payment Again
+                </Link>
+              )}
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-2 bg-gray-900 hover:bg-red-600 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
+              >
+                Back to Home
+              </Link>
+            </div>
           </>
         )}
       </div>

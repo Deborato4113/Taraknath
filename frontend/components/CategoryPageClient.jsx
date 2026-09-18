@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, ShieldCheck, Wrench, Clock } from "lucide-react";
 import Footer from "./Footer";
+import Header from "./Header";
 
 const BEARING_ICONS = [ShieldCheck, Wrench, Clock];
 
@@ -100,25 +101,15 @@ export default function CategoryPageClient({ category, meta }) {
 
 
       {/* Top bar */}
-      <div className="bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link
-            href="/#products"
-            className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to All Products
-          </Link>
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-            </div>
-            <span className="hidden sm:block text-xs font-bold tracking-widest uppercase heading-font">
-              Taraknath Engineering Works
-            </span>
-          </Link>
-        </div>
+      <Header />
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-3">
+        <Link
+          href="/#products"
+          className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-500 hover:text-red-600 transition-colors"
+        >
+          <ArrowLeft size={14} /> Back to All Products
+        </Link>
       </div>
-      <div className="h-1 w-full bg-blue-800" />
 
       {/* Page header */}
       <div className="bg-gray-50 border-b border-gray-200">

@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react
 import { useCart } from "./CartContext";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
+import Header from "./Header";
 
 export default function ProductDetailPage({ item, category, categoryName, prevSlug, nextSlug }) {
   const thumbs = item.images?.length ? item.images : item.image ? [item.image] : [];
@@ -51,25 +52,15 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
   return (
     <div className="min-h-screen bg-white">
       {/* Top bar */}
-      <div className="bg-gray-900 text-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link
-            href={`/products/${category}`}
-            className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={14} /> Back to {categoryName}
-          </Link>
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 relative flex-shrink-0">
-              <Image src="/logo.png" alt="Taraknath Engineering Works logo" fill sizes="32px" className="object-contain" />
-            </div>
-            <span className="hidden sm:block text-xs font-bold tracking-widest uppercase heading-font">
-              Taraknath Engineering Works
-            </span>
-          </Link>
-        </div>
+      <Header />
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-3">
+        <Link
+          href={`/products/${category}`}
+          className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-500 hover:text-red-600 transition-colors"
+        >
+          <ArrowLeft size={14} /> Back to {categoryName}
+        </Link>
       </div>
-      <div className="h-1 w-full bg-blue-800" />
 
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-5 sm:px-8 py-3 border-b border-gray-100">
