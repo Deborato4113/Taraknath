@@ -1,20 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { statusLabel, STATUS_COLORS } from "../../../lib/orderStatus";
 
 // PENDING, PAID and PROCESSING are set automatically by the payment system
 // (see backend/src/routes/orders.js) — not selectable here. This mirrors
 // the same rule enforced server-side in backend/src/routes/admin.js.
 const ADMIN_SETTABLE_STATUSES = ["SHIPPED", "DELIVERED", "CANCELLED"];
-
-const STATUS_COLORS = {
-  PENDING: "bg-gray-100 text-gray-600",
-  PAID: "bg-blue-100 text-blue-700",
-  PROCESSING: "bg-yellow-100 text-yellow-700",
-  SHIPPED: "bg-purple-100 text-purple-700",
-  DELIVERED: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
 
 // What the admin is allowed to move an order to FROM its current status —
 // mirrors the validation in backend/src/routes/admin.js so the dropdown
@@ -108,7 +100,7 @@ export default function AdminOrdersPage() {
                   <span
                     className={`inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_COLORS[order.status] || ""}`}
                   >
-                    {order.status}
+                    {statusLabel(order.status)}
                   </span>
                   <select
                     value={order.status}
@@ -120,10 +112,10 @@ export default function AdminOrdersPage() {
                         one the admin can pick — this is just so the
                         select's value has a matching <option>. */}
                     {!nextStatusOptions(order.status).includes(order.status) && (
-                      <option value={order.status} disabled>{order.status}</option>
+                      <option value={order.status} disabled>{statusLabel(order.status)}</option>
                     )}
                     {nextStatusOptions(order.status).map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>{statusLabel(s)}</option>
                     ))}
                   </select>
                 </div>

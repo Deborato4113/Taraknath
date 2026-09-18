@@ -7,15 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { RotateCcw } from "lucide-react";
 import Header from "../../../components/Header";
-
-const STATUS_COLORS = {
-  PENDING: "bg-gray-100 text-gray-600",
-  PAID: "bg-blue-100 text-blue-700",
-  PROCESSING: "bg-yellow-100 text-yellow-700",
-  SHIPPED: "bg-purple-100 text-purple-700",
-  DELIVERED: "bg-green-100 text-green-700",
-  CANCELLED: "bg-red-100 text-red-700",
-};
+import { statusLabel, STATUS_COLORS } from "../../../lib/orderStatus";
 
 export default function OrderHistoryPage() {
   const { status } = useSession();
@@ -108,7 +100,7 @@ export default function OrderHistoryPage() {
                     <span
                       className={`inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_COLORS[order.status] || ""}`}
                     >
-                      {order.status}
+                      {statusLabel(order.status)}
                     </span>
                     <button
                       onClick={() => handleReorder(order.id)}
