@@ -8,6 +8,9 @@ const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 // or null if there isn't one (caller should respond 401).
 export async function getSessionUserId() {
   const session = await getServerSession(authOptions);
+
+  console.log("CART SESSION:", JSON.stringify(session, null, 2));
+
   return session?.user?.id ?? null;
 }
 
