@@ -9,10 +9,10 @@ const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 export async function getSessionUserId() {
   const session = await getServerSession(authOptions);
 
-  console.log("===== CART SESSION DEBUG =====");
-  console.log("Session:", session);
-  console.log("User ID:", session?.user?.id);
-  console.log("==============================");
+  console.log(
+    "SERVER CART SESSION:",
+    JSON.stringify(session, null, 2)
+  );
 
   return session?.user?.id ?? null;
 }
