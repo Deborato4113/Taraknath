@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: 'Inter', sans-serif; }
+body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
 h1, h2, h3, h4, .heading-font { font-family: 'Oswald', sans-serif; }
 .mono { font-family: 'JetBrains Mono', monospace; }
 

@@ -83,11 +83,11 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
       </div>
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 pb-16">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 py-8 pb-16 overflow-x-hidden">
         <div className="grid lg:grid-cols-2 gap-8 xl:gap-14 items-start">
 
           {/* LEFT — thumbnails + main image */}
-          <div className="flex flex-col-reverse sm:flex-row gap-3">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 min-w-0 w-full">
             {/* Thumbnail strip — horizontal scroll on mobile, vertical column on sm+ */}
             {thumbs.length > 1 && (
               <div
@@ -194,7 +194,7 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
           </div>
 
           {/* RIGHT — product info */}
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <p className="mono text-[10px] text-blue-800 tracking-widest uppercase mb-2">
               {item.tag}
             </p>
