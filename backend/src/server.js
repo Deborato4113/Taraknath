@@ -34,6 +34,6 @@ app.use("/api/orders", ordersRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/addresses", addressesRouter);
 
-app.listen(PORT, () => {
-  console.log(`Backend API running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Backend API running on port ${PORT}`);
 });
