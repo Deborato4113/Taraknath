@@ -1,0 +1,263 @@
+// Prisma schema for Taraknath Engineering Works e-commerce backend
+// Database: MySQL (works with PlanetScale, Railway, or any managed MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USERS & AUTH
+// ─────────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String? // hashed password, null if using OAuth-only login
+  role          Role      @default(CUSTOMER)
+  phone         String?
+
+  accounts Account[] // NextAuth OAuth accounts (Google, etc.)
+  sessions Session[] // NextAuth sessions
+
+  addresses Address[]
+  cartItems CartItem[]
+  orders    Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// NextAuth.js required models (Prisma adapter)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id         String   @id @default(cuid())
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────
+// CATALOG
+// ─────────────────────────────────────────────
+
+model Category {
+  id    String  @id @default(cuid())
+  slug  String  @unique // "shipyard", "deck", "bronze", "bearing", "babbit", "fabrication"
+  name  String // "Shipyard Products"
+  code  String? // "01".."06" — display order badge used on the homepage grid
+  blurb String? @db.Text
+  tag   String? // eyebrow tag shown on the homepage category card
+
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  sku         String  @unique
+  name        String
+  slug        String  @unique
+  tag         String? // project/spec tag, e.g. "YD: FPV 2113–2117"
+  description String  @db.Text
+
+  // E-commerce fields — nullable because some items stay "quote only"
+  price       Decimal? @db.Decimal(10, 2)
+  isBuyable   Boolean  @default(false) // false = "Request a Quote" only, true = shows Add to Cart
+  stock       Int      @default(0)
+  isPublished Boolean  @default(true)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  images     ProductImage[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductImage {
+  id       String @id @default(cuid())
+  url      String @db.VarChar(500)
+  position Int    @default(0) // display order in the gallery
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+// ─────────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────────
+
+model CartItem {
+  id       String @id @default(cuid())
+  quantity Int    @default(1)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId]) // one row per product per user; increment quantity instead of duplicating
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────────
+// ORDERS & PAYMENTS
+// ─────────────────────────────────────────────
+
+enum OrderStatus {
+  PENDING // order created, payment not yet confirmed
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Address {
+  id      String  @id @default(cuid())
+  label   String? // "Home", "Office"
+  line1   String
+  line2   String?
+  city    String
+  state   String
+  pincode String
+  country String  @default("India")
+  phone   String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+
+  @@map("addresses")
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  status OrderStatus @default(PENDING)
+
+  subtotal Decimal @db.Decimal(10, 2)
+  total    Decimal @db.Decimal(10, 2)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  addressId String?
+  address   Address? @relation(fields: [addressId], references: [id])
+
+  items   OrderItem[]
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  quantity Int
+  price    Decimal @db.Decimal(10, 2) // price at time of purchase — never read live product.price for history
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCCESS
+  FAILED
+}
+
+model Payment {
+  id     String        @id @default(cuid())
+  status PaymentStatus @default(CREATED)
+
+  razorpayOrderId   String  @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+
+  amount Decimal @db.Decimal(10, 2)
+
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payments")
+}
