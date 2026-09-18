@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -120,6 +120,15 @@ export default function AccountPage() {
               </button>
             </form>
           )}
+
+          <div className="mt-10 pt-6 border-t border-gray-200 text-center">
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-xs font-semibold tracking-widest uppercase text-gray-500 hover:text-red-600 transition-colors"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
     </div>

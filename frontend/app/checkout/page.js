@@ -26,7 +26,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
 
   if (status === "unauthenticated") {
-    router.push("/login");
+    router.push("/login?callbackUrl=%2Fcheckout");
     return null;
   }
 

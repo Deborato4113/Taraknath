@@ -154,11 +154,11 @@ export default function AddressesPage() {
               onChange={(e) => update("line2", e.target.value)}
               className={inputClass}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input required placeholder="City" value={form.city} onChange={(e) => update("city", e.target.value)} className={inputClass} />
               <input required placeholder="State" value={form.state} onChange={(e) => update("state", e.target.value)} className={inputClass} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <input required placeholder="Pincode" value={form.pincode} onChange={(e) => update("pincode", e.target.value)} className={inputClass} />
               <input required type="tel" placeholder="Phone number" value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputClass} />
             </div>

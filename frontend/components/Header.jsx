@@ -197,7 +197,7 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <Link href="/login" className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 transition-colors">
+            <Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`} className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 transition-colors">
               <User size={15} /> Login
             </Link>
           )}
@@ -215,8 +215,8 @@ export default function Header() {
 
       {/* Mobile menu */}
       <div
-        className={`lg:hidden overflow-hidden transition-all duration-300 ${
-          menuOpen ? "max-h-96" : "max-h-0"
+        className={`lg:hidden overflow-y-auto transition-all duration-300 ${
+          menuOpen ? "max-h-[calc(100vh-5rem)]" : "max-h-0"
         }`}
       >
         <div className="flex flex-col bg-gray-50 border-t border-gray-200">
@@ -297,7 +297,7 @@ export default function Header() {
             </button>
           ) : (
             <Link
-              href="/login"
+              href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
               onClick={() => setMenuOpen(false)}
               className="px-6 py-3.5 text-xs font-semibold tracking-widest uppercase text-gray-600 text-left border-t border-gray-200"
             >

@@ -28,7 +28,7 @@ export default function CartPage() {
       <div className="min-h-screen flex flex-col items-center justify-center px-5 text-center">
         <p className="text-gray-500 mb-4">Log in to view your cart.</p>
         <Link
-          href="/login"
+          href="/login?callbackUrl=%2Fcart"
           className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold tracking-widest uppercase px-6 py-3"
         >
           Log In

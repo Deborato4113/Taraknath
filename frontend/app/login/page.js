@@ -1,14 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Wherever the user was trying to go before we sent them here (e.g. a
+  // product page they clicked "Add to Cart" on) — falls back to home if
+  // they just landed on /login directly.
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -32,7 +46,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    router.push(callbackUrl);
     router.refresh();
   }
 
@@ -61,7 +75,7 @@ export default function LoginPage() {
             Log In
           </h1>
 
-          <GoogleSignInButton onError={setError} />
+          <GoogleSignInButton onError={setError} callbackUrl={callbackUrl} />
 
           <div className="flex items-center gap-3 my-6">
             <div className="h-px flex-1 bg-gray-200" />
@@ -111,7 +125,10 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-blue-800 font-semibold hover:underline">
+            <Link
+              href={`/signup${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+              className="text-blue-800 font-semibold hover:underline"
+            >
               Sign up
             </Link>
           </p>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import GoogleSignInButton from "../../components/GoogleSignInButton";
@@ -10,7 +10,20 @@ import GoogleSignInButton from "../../components/GoogleSignInButton";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupPageInner />
+    </Suspense>
+  );
+}
+
+function SignupPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Same idea as the login page — where to send the user once they're
+  // signed in, e.g. back to the product they were trying to add to cart.
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,12 +56,13 @@ export default function SignupPage() {
 
     if (signInRes?.error) {
       // Account was created but auto-login failed for some reason — send
-      // them to log in manually rather than leaving them stuck.
-      router.push("/login");
+      // them to log in manually rather than leaving them stuck, but keep
+      // the callback URL so the chain isn't broken.
+      router.push(`/login${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`);
       return;
     }
 
-    router.push("/");
+    router.push(callbackUrl);
     router.refresh();
   }
 
@@ -77,7 +91,7 @@ export default function SignupPage() {
             Create Account
           </h1>
 
-          <GoogleSignInButton onError={setError} />
+          <GoogleSignInButton onError={setError} callbackUrl={callbackUrl} />
 
           <div className="flex items-center gap-3 my-6">
             <div className="h-px flex-1 bg-gray-200" />
@@ -142,7 +156,10 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-gray-500 mt-6">
             Already have an account?{" "}
-            <Link href="/login" className="text-blue-800 font-semibold hover:underline">
+            <Link
+              href={`/login${callbackUrl !== "/" ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ""}`}
+              className="text-blue-800 font-semibold hover:underline"
+            >
               Log in
             </Link>
           </p>

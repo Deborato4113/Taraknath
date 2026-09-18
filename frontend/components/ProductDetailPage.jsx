@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { useCart } from "./CartContext";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ProductDetailPage({ item, category, categoryName, prevSlug, nextSlug }) {
   const thumbs = item.images?.length ? item.images : item.image ? [item.image] : [];
@@ -16,13 +16,14 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
   const { addToCart } = useCart();
   const { status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [addedOnce, setAddedOnce] = useState(false);
 
   async function handleAddToCart() {
     if (status !== "authenticated") {
-      router.push("/login");
+      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
       return;
     }
     setAdding(true);

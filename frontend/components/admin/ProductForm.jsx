@@ -115,7 +115,7 @@ export default function ProductForm({ initialProduct }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-2xl">
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={labelClass}>Name *</label>
           <input
@@ -136,7 +136,7 @@ export default function ProductForm({ initialProduct }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={labelClass}>Slug *</label>
           <input
@@ -181,7 +181,7 @@ export default function ProductForm({ initialProduct }) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={labelClass}>Price (₹, leave blank for "Quote only")</label>
           <input

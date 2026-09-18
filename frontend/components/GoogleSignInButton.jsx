@@ -16,7 +16,7 @@ import { firebaseAuth, googleProvider } from "../lib/firebaseClient";
 //    sites
 // 4. NextAuth issues its normal JWT session, and the app carries on exactly
 //    as it does after an email/password login
-export default function GoogleSignInButton({ onError }) {
+export default function GoogleSignInButton({ onError, callbackUrl = "/" }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +36,7 @@ export default function GoogleSignInButton({ onError }) {
         return;
       }
 
-      router.push("/");
+      router.push(callbackUrl);
       router.refresh();
     } catch (err) {
       // Most common case: user closed the Google popup themselves —

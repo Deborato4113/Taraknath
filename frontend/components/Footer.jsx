@@ -121,7 +121,7 @@ export default function Footer() {
           <span>© 2026 Taraknath Engineering Works. All Rights Reserved.</span>
           <div className="flex gap-5">
             <Link href="#" className="hover:text-red-500 transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-red-500 transition-colors">Help</Link>
+            <Link href="/contact" className="hover:text-red-500 transition-colors">Help</Link>
           </div>
         </div>
       </div>
