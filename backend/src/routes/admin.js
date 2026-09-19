@@ -281,4 +281,48 @@ router.put("/orders/:id/status", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────
+// BULK QUOTE REQUESTS (RFQs)
+// ─────────────────────────────────────────────
+
+const QUOTE_STATUSES = ["NEW", "CONTACTED", "CLOSED"];
+
+// GET /api/admin/quote-requests
+router.get("/quote-requests", async (req, res) => {
+  try {
+    const quotes = await prisma.quoteRequest.findMany({
+      include: {
+        user: { select: { name: true, email: true, phone: true } },
+        items: { include: { product: { select: { name: true, sku: true } } } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(quotes);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch quote requests" });
+  }
+});
+
+// PUT /api/admin/quote-requests/:id/status — { status }
+router.put("/quote-requests/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!QUOTE_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of ${QUOTE_STATUSES.join(", ")}` });
+    }
+
+    const quote = await prisma.quoteRequest.update({
+      where: { id: req.params.id },
+      data: { status },
+    });
+
+    res.json(quote);
+  } catch (err) {
+    console.error(err);
+    if (err.code === "P2025") return res.status(404).json({ error: "Quote request not found" });
+    res.status(500).json({ error: "Failed to update quote request" });
+  }
+});
+
 module.exports = router;

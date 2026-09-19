@@ -25,9 +25,14 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 const FROM_EMAIL = "Taraknath Engineering Works <onboarding@resend.dev>";
 
-// Who low-stock alerts go to — defaults to the same inbox the contact form
-// delivers enquiries to, so nothing new to configure if you don't want it.
-const OWNER_EMAIL = process.env.OWNER_ALERT_EMAIL || "deboratochaudhury2023@gmail.com";
+// Who low-stock alerts go to — comma-separate multiple addresses if you
+// want more than one person to get them (e.g. "you@x.com,partner@y.com").
+// Defaults to the same inbox the contact form delivers enquiries to, so
+// nothing new to configure if you don't want it.
+const OWNER_EMAILS = (process.env.OWNER_ALERT_EMAIL || "deboratochaudhury2023@gmail.com")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
 
 // Stock at or below this triggers a low-stock alert email.
 const LOW_STOCK_THRESHOLD = Number(process.env.LOW_STOCK_THRESHOLD || 5);
@@ -65,7 +70,12 @@ async function send({ to, subject, html }) {
     return;
   }
   try {
-    const { error } = await resend.emails.send({ from: FROM_EMAIL, to: [to], subject, html });
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    });
     if (error) console.error("Resend error:", error);
   } catch (err) {
     console.error("Failed to send email:", err);
@@ -120,7 +130,7 @@ async function sendOrderStatusEmail({ order, user, status }) {
 
 async function sendLowStockAlert({ product }) {
   await send({
-    to: OWNER_EMAIL,
+    to: OWNER_EMAILS,
     subject: `Low Stock Alert — ${product.name} (${product.stock} left)`,
     html: `
       <h2>Low stock warning</h2>
@@ -131,9 +141,45 @@ async function sendLowStockAlert({ product }) {
   });
 }
 
+async function sendQuoteRequestEmail({ quoteRequest, user }) {
+  const rows = quoteRequest.items
+    .map(
+      (item) => `
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;">
+            ${escapeHtml(item.product?.name || "Item")} (SKU: ${escapeHtml(item.product?.sku || "—")})
+          </td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${item.quantity}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;">${escapeHtml(item.note || "")}</td>
+        </tr>`
+    )
+    .join("");
+
+  await send({
+    to: OWNER_EMAILS,
+    subject: `New Bulk Quote Request — ${escapeHtml(user.name || user.email)}`,
+    html: `
+      <h2>New bulk quote request from the website</h2>
+      <p><strong>From:</strong> ${escapeHtml(user.name || "")} (${escapeHtml(user.email)})</p>
+      ${quoteRequest.projectRef ? `<p><strong>Project / PO reference:</strong> ${escapeHtml(quoteRequest.projectRef)}</p>` : ""}
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:12px;">
+        <tr style="font-weight:bold;">
+          <td style="padding:8px 0;border-bottom:2px solid #333;">Item</td>
+          <td style="padding:8px 0;border-bottom:2px solid #333;text-align:right;">Qty</td>
+          <td style="padding:8px 0;border-bottom:2px solid #333;">Note</td>
+        </tr>
+        ${rows}
+      </table>
+      ${quoteRequest.message ? `<p style="margin-top:16px;"><strong>Message:</strong><br>${escapeHtml(quoteRequest.message).replace(/\n/g, "<br>")}</p>` : ""}
+      <p style="margin-top:24px;color:#666;font-size:13px;">Quote request ID: ${quoteRequest.id}</p>
+    `,
+  });
+}
+
 module.exports = {
   sendOrderConfirmationEmail,
   sendOrderStatusEmail,
   sendLowStockAlert,
+  sendQuoteRequestEmail,
   LOW_STOCK_THRESHOLD,
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
@@ -8,6 +8,7 @@ import { useCart } from "./CartContext";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Header from "./Header";
+import WishlistButton from "./WishlistButton";
 
 export default function ProductDetailPage({ item, category, categoryName, prevSlug, nextSlug }) {
   const thumbs = item.images?.length ? item.images : item.image ? [item.image] : [];
@@ -21,6 +22,17 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
   const [addedOnce, setAddedOnce] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/wishlist")
+      .then((res) => res.json())
+      .then((list) => {
+        if (Array.isArray(list)) setWishlisted(list.some((w) => w.productId === item.id));
+      })
+      .catch(() => {});
+  }, [status, item.id]);
 
   async function handleAddToCart() {
     if (status !== "authenticated") {
@@ -247,15 +259,38 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
                     Go to Cart →
                   </Link>
                 )}
+
+                <WishlistButton
+                  productId={item.id}
+                  saved={wishlisted}
+                  size={20}
+                  className="border border-gray-200 hover:border-red-300 px-4 py-4"
+                />
               </div>
             )}
 
-            <Link
-              href={`/contact?category=${encodeURIComponent(category)}&product=${encodeURIComponent(item.name)}`}
-              className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
-            >
-              Help
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href={`/contact?category=${encodeURIComponent(category)}&product=${encodeURIComponent(item.name)}`}
+                className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
+              >
+                Help
+              </Link>
+              <Link
+                href={`/quote-request?productId=${item.id}&productName=${encodeURIComponent(item.name)}`}
+                className="inline-flex items-center justify-center gap-2 text-xs font-semibold tracking-widest uppercase text-gray-700 border border-gray-300 hover:border-gray-900 transition-colors px-7 py-4"
+              >
+                Request Bulk Quote
+              </Link>
+              {!item.isBuyable && (
+                <WishlistButton
+                  productId={item.id}
+                  saved={wishlisted}
+                  size={20}
+                  className="border border-gray-200 hover:border-red-300 px-4 py-4"
+                />
+              )}
+            </div>
 
             {/* Prev / Next navigation */}
             <div className="flex gap-3 mt-6 pt-6 border-t border-gray-100">

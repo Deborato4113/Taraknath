@@ -8,12 +8,6 @@ const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 // or null if there isn't one (caller should respond 401).
 export async function getSessionUserId() {
   const session = await getServerSession(authOptions);
-
-  console.log(
-    "SERVER CART SESSION:",
-    JSON.stringify(session, null, 2)
-  );
-
   return session?.user?.id ?? null;
 }
 
@@ -44,6 +38,47 @@ export async function callCartApi(path, { method = "GET", userId, body } = {}) {
 // needs userId as a query param — create/verify send it in the body.
 export async function callOrdersApi(path, { method = "GET", userId, body } = {}) {
   const url = new URL(`${API_URL}/api/orders${path}`);
+  if (method === "GET") url.searchParams.set("userId", userId);
+
+  const res = await fetch(url.toString(), {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: method === "GET" ? undefined : JSON.stringify({ ...body, userId }),
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Same pattern, for /api/wishlist. DELETE takes the productId in the path
+// (matching the backend route), GET/DELETE need userId as a query param.
+export async function callWishlistApi(path, { method = "GET", userId, body } = {}) {
+  const url = new URL(`${API_URL}/api/wishlist${path}`);
+  const isGetOrDelete = method === "GET" || method === "DELETE";
+
+  if (isGetOrDelete) url.searchParams.set("userId", userId);
+
+  const res = await fetch(url.toString(), {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: isGetOrDelete ? undefined : JSON.stringify({ ...body, userId }),
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Same pattern, for /api/quotes.
+export async function callQuotesApi(path, { method = "GET", userId, body } = {}) {
+  const url = new URL(`${API_URL}/api/quotes${path}`);
   if (method === "GET") url.searchParams.set("userId", userId);
 
   const res = await fetch(url.toString(), {

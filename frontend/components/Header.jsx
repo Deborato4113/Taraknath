@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, User, ShoppingCart, ShieldCheck, ChevronDown, ListOrdered, MapPin } from "lucide-react";
+import { Menu, X, User, ShoppingCart, ShieldCheck, ChevronDown, ListOrdered, MapPin, Heart } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useCart } from "./CartContext";
 
@@ -183,6 +183,13 @@ export default function Header() {
                   >
                     <MapPin size={15} /> Addresses
                   </Link>
+                  <Link
+                    href="/account/wishlist"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-red-600"
+                  >
+                    <Heart size={15} /> Wishlist
+                  </Link>
                   <div className="h-px bg-gray-100 my-1" />
                   <button
                     onClick={() => {
@@ -281,6 +288,13 @@ export default function Header() {
                 className="px-6 py-3.5 text-xs font-semibold tracking-widest uppercase text-gray-600 text-left border-t border-gray-200"
               >
                 Addresses
+              </Link>
+              <Link
+                href="/account/wishlist"
+                onClick={() => setMenuOpen(false)}
+                className="px-6 py-3.5 text-xs font-semibold tracking-widest uppercase text-gray-600 text-left border-t border-gray-200"
+              >
+                Wishlist
               </Link>
             </>
           )}

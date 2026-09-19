@@ -9,6 +9,8 @@ const cartRouter = require("./routes/cart");
 const ordersRouter = require("./routes/orders");
 const adminRouter = require("./routes/admin");
 const addressesRouter = require("./routes/addresses");
+const wishlistRouter = require("./routes/wishlist");
+const quotesRouter = require("./routes/quotes");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -33,7 +35,9 @@ app.use("/api/cart", cartRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/addresses", addressesRouter);
+app.use("/api/wishlist", wishlistRouter);
+app.use("/api/quotes", quotesRouter);
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Backend API running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Backend API running on http://localhost:${PORT}`);
 });

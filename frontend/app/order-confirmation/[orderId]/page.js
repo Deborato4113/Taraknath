@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import Header from "../../../components/Header";
+import OrderTimeline from "../../../components/OrderTimeline";
 
 // What to show depends on the order's actual status — this used to show
 // "Order Confirmed" unconditionally for any order fetched, including ones
@@ -74,6 +75,10 @@ export default function OrderConfirmationPage({ params }) {
               <p className="text-gray-500 text-sm max-w-md mx-auto mb-8">{display.message}</p>
             )}
             {!display.message && <div className="mb-8" />}
+
+            {order.status !== "CANCELLED" && (
+              <OrderTimeline status={order.status} createdAt={order.createdAt} updatedAt={order.updatedAt} />
+            )}
 
             <div className="border border-gray-200 text-left mb-8">
               {order.items.map((item) => (

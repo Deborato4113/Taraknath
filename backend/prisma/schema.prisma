@@ -34,7 +34,9 @@ model User {
 
   addresses Address[]
   cartItems CartItem[]
+  wishlistItems WishlistItem[]
   orders    Order[]
+  quoteRequests QuoteRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,6 +126,8 @@ model Product {
   images     ProductImage[]
   cartItems  CartItem[]
   orderItems OrderItem[]
+  wishlistItems WishlistItem[]
+  quoteRequestItems QuoteRequestItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -165,6 +169,21 @@ model CartItem {
   @@map("cart_items")
 }
 
+model WishlistItem {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId]) // a product can only be saved once per user
+  @@map("wishlist_items")
+}
+
 // ─────────────────────────────────────────────
 // ORDERS & PAYMENTS
 // ─────────────────────────────────────────────
@@ -176,6 +195,59 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// BULK QUOTES (RFQs)
+// ─────────────────────────────────────────────
+// Separate from Order/CartItem on purpose — a quote request isn't a
+// purchase, has no payment, and often covers quantities or products that
+// don't fit a simple checkout flow (project-based buying, PO references,
+// negotiated pricing). Admin reviews these and follows up directly
+// (phone/email) rather than the customer paying through the site.
+
+enum QuoteRequestStatus {
+  NEW // just submitted, admin hasn't followed up yet
+  CONTACTED // admin has reached out to the customer
+  CLOSED // quote given / deal done or dropped
+}
+
+model QuoteRequest {
+  id     String              @id @default(cuid())
+  status QuoteRequestStatus  @default(NEW)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Project/PO reference and any extra context from the buyer — free text
+  // since industrial buyers often quote an internal project code that
+  // doesn't map to anything else in this schema.
+  projectRef String?
+  message    String? @db.Text
+
+  items QuoteRequestItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("quote_requests")
+}
+
+model QuoteRequestItem {
+  id       String @id @default(cuid())
+  quantity Int    @default(1)
+  // Free-text note per line — e.g. a spec variant, size, or finish the
+  // buyer wants that isn't captured by picking a Product alone.
+  note     String?
+
+  quoteRequestId String
+  quoteRequest   QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("quote_request_items")
 }
 
 model Address {
