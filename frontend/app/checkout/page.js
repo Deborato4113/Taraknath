@@ -26,6 +26,14 @@ export default function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
 
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState(null); // { code, discount, message }
+  const [couponError, setCouponError] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+
+  const discount = coupon?.discount || 0;
+  const total = Math.max(Number(cart.subtotal || 0) - discount, 0);
+
   if (status === "unauthenticated") {
     router.push("/login?callbackUrl=%2Fcheckout");
     return null;
@@ -33,6 +41,39 @@ export default function CheckoutPage() {
 
   function updateField(field, value) {
     setAddress((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleApplyCoupon(e) {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+    setCouponError("");
+    setApplyingCoupon(true);
+
+    try {
+      const res = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponInput.trim(), subtotal: Number(cart.subtotal) }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.valid) {
+        setCoupon(null);
+        setCouponError(data.message || "Invalid coupon code");
+      } else {
+        setCoupon({ code: data.code, discount: data.discount, message: data.message });
+      }
+    } catch (err) {
+      setCouponError("Could not validate coupon. Please try again.");
+    } finally {
+      setApplyingCoupon(false);
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setCoupon(null);
+    setCouponInput("");
+    setCouponError("");
   }
 
   async function handlePlaceOrder(e) {
@@ -46,7 +87,7 @@ export default function CheckoutPage() {
       const createRes = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify({ address, couponCode: coupon?.code || undefined }),
       });
       const orderData = await createRes.json();
 
@@ -156,10 +197,60 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                 ))}
+                {coupon && (
+                  <div className="flex justify-between items-center px-4 py-2 text-sm border-t border-gray-100">
+                    <span className="text-gray-500">Subtotal</span>
+                    <span className="text-gray-700">₹{Number(cart.subtotal).toLocaleString("en-IN")}</span>
+                  </div>
+                )}
+                {coupon && (
+                  <div className="flex justify-between items-center px-4 py-2 text-sm">
+                    <span className="text-green-700">Discount ({coupon.code})</span>
+                    <span className="text-green-700">−₹{Number(discount).toLocaleString("en-IN")}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-sm font-bold">
                   <span>Total</span>
-                  <span>₹{Number(cart.subtotal).toLocaleString("en-IN")}</span>
+                  <span>₹{Number(total).toLocaleString("en-IN")}</span>
                 </div>
+              </div>
+
+              {/* Coupon code */}
+              <div className="mb-8">
+                <p className="mono text-[11px] font-semibold tracking-[0.3em] text-red-600 uppercase mb-3">
+                  Discount Code
+                </p>
+                {coupon ? (
+                  <div className="flex items-center justify-between border border-green-200 bg-green-50 px-4 py-3">
+                    <p className="text-sm text-green-800">
+                      <span className="font-mono font-semibold">{coupon.code}</span> — {coupon.message}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-xs font-semibold text-gray-500 hover:text-red-600 uppercase tracking-widest"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleApplyCoupon} className="flex gap-3">
+                    <input
+                      placeholder="Enter coupon code"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value)}
+                      className="flex-1 border border-gray-300 px-4 py-3 text-sm uppercase focus:outline-none focus:border-blue-800"
+                    />
+                    <button
+                      type="submit"
+                      disabled={applyingCoupon || !couponInput.trim()}
+                      className="inline-flex items-center justify-center gap-2 border border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white disabled:opacity-50 transition-colors text-xs font-semibold tracking-widest uppercase px-6 py-3"
+                    >
+                      {applyingCoupon ? "Checking..." : "Apply"}
+                    </button>
+                  </form>
+                )}
+                {couponError && <p className="text-red-600 text-sm mt-2">{couponError}</p>}
               </div>
 
               {/* Shipping address form */}
@@ -222,7 +313,7 @@ export default function CheckoutPage() {
                   disabled={placing}
                   className="mt-2 inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 transition-colors text-white text-xs font-semibold tracking-widest uppercase px-7 py-4"
                 >
-                  {placing ? "Processing..." : `Pay ₹${Number(cart.subtotal).toLocaleString("en-IN")}`}
+                  {placing ? "Processing..." : `Pay ₹${Number(total).toLocaleString("en-IN")}`}
                 </button>
               </form>
             </>

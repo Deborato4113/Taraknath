@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,11 +9,13 @@ import { Trash2, Minus, Plus, ArrowLeft } from "lucide-react";
 import { useCart } from "../../components/CartContext";
 import Footer from "../../components/Footer";
 import Header from "../../components/Header";
+import RelatedProducts from "../../components/RelatedProducts";
 
 export default function CartPage() {
   const { status } = useSession();
   const router = useRouter();
   const { cart, loading, refreshCart, updateQuantity, removeItem } = useCart();
+  const [suggestions, setSuggestions] = useState([]);
 
   // Safety-net refetch: the shared CartContext already updates itself the
   // moment an item is added elsewhere in the app, but this guarantees the
@@ -23,6 +25,28 @@ export default function CartPage() {
     if (status === "authenticated") refreshCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
+
+  // "Frequently bought together" — same-category recommendations spanning
+  // every category currently represented in the cart, excluding whatever
+  // is already in it. Simple version, as suggested: no purchase-pattern
+  // mining, just "other items from the same categories".
+  useEffect(() => {
+    const categorySlugs = [...new Set(cart.items.map((i) => i.product.categorySlug).filter(Boolean))];
+    if (categorySlugs.length === 0) {
+      setSuggestions([]);
+      return;
+    }
+    const excludeIds = cart.items.map((i) => i.product.id);
+    const params = new URLSearchParams({
+      category: categorySlugs.join(","),
+      exclude: excludeIds.join(","),
+      limit: "4",
+    });
+    fetch(`/api/products/related?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => setSuggestions(Array.isArray(data) ? data : []))
+      .catch(() => setSuggestions([]));
+  }, [cart.items]);
 
   if (status === "unauthenticated") {
     return (
@@ -137,6 +161,12 @@ export default function CartPage() {
                 </Link>
               </div>
             </div>
+
+            <RelatedProducts
+              title="Frequently Bought Together"
+              items={suggestions}
+              categorySlug={(item) => item.categorySlug}
+            />
           </>
         )}
       </div>

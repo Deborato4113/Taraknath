@@ -6,7 +6,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-function adaptProduct(p) {
+export function adaptProduct(p) {
   const urls = (p.images || []).map((img) => img.url);
   return {
     id: p.id, // needed for cart operations — Add to Cart posts this, not the slug
@@ -18,6 +18,10 @@ function adaptProduct(p) {
     images: urls,
     price: p.price,
     isBuyable: p.isBuyable,
+    // Only present when the caller included category (e.g. the related-
+    // products endpoint) — used to build a correct /products/<slug>/... link
+    // for recommendations that can span more than one category (cart page).
+    categorySlug: p.category?.slug ?? null,
   };
 }
 

@@ -94,3 +94,58 @@ export async function callQuotesApi(path, { method = "GET", userId, body } = {})
   const data = await res.json();
   return { ok: res.ok, status: res.status, data };
 }
+
+// Same pattern, for /api/coupons. No userId involved — coupon validation
+// isn't tied to a particular user, just to the cart subtotal at checkout.
+export async function callCouponsApi(path, { method = "POST", body } = {}) {
+  const res = await fetch(`${API_URL}/api/coupons${path}`, {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Same pattern, for /api/reviews. GET is public (no userId needed — a
+// product's reviews are visible to anyone); POST/DELETE need userId, same
+// as everywhere else here.
+export async function callReviewsApi(path, { method = "GET", userId, body, query } = {}) {
+  const url = new URL(`${API_URL}/api/reviews${path}`);
+  if (query) Object.entries(query).forEach(([k, v]) => url.searchParams.set(k, v));
+  if (method === "DELETE" && userId) url.searchParams.set("userId", userId);
+
+  const res = await fetch(url.toString(), {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-secret": INTERNAL_SECRET,
+    },
+    body: method === "GET" || method === "DELETE" ? undefined : JSON.stringify({ ...body, userId }),
+    cache: "no-store",
+  });
+
+  const data = await res.json();
+  return { ok: res.ok, status: res.status, data };
+}
+
+// Same pattern, for the public /api/products endpoint on the backend —
+// used by the cart page's "Frequently bought together" section, which
+// needs same-category recommendations client-side. No secret required on
+// the backend for this route (it's public catalog data), but we still
+// proxy through here so the frontend never hardcodes the backend's URL.
+export async function fetchRelatedProducts({ category, exclude = [], limit = 4 }) {
+  const url = new URL(`${API_URL}/api/products/related`);
+  url.searchParams.set("category", category);
+  if (exclude.length) url.searchParams.set("exclude", exclude.join(","));
+  url.searchParams.set("limit", String(limit));
+
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}

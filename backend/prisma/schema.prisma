@@ -37,6 +37,7 @@ model User {
   wishlistItems WishlistItem[]
   orders    Order[]
   quoteRequests QuoteRequest[]
+  reviews   Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -128,12 +129,42 @@ model Product {
   orderItems OrderItem[]
   wishlistItems WishlistItem[]
   quoteRequestItems QuoteRequestItem[]
+  reviews    Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([categoryId])
   @@map("products")
+}
+
+// ─────────────────────────────────────────────
+// REVIEWS & RATINGS
+// ─────────────────────────────────────────────
+
+model Review {
+  id      String  @id @default(cuid())
+  rating  Int // 1-5, enforced in the API layer (Prisma/MySQL don't do range checks)
+  comment String? @db.Text
+
+  // Set at creation time from the user's order history — true only if
+  // they have a PAID/PROCESSING/SHIPPED/DELIVERED order containing this
+  // product. Never recalculated afterward, same as an order's price
+  // snapshot: a badge shouldn't flip after the fact.
+  isVerifiedPurchase Boolean @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId]) // one review per user per product; editing replaces it
+  @@index([productId])
+  @@map("reviews")
 }
 
 model ProductImage {
@@ -271,11 +302,43 @@ model Address {
   @@map("addresses")
 }
 
+// ─────────────────────────────────────────────
+// COUPONS
+// ─────────────────────────────────────────────
+
+enum CouponType {
+  PERCENT // value is a percentage 0-100, optionally capped by maxDiscount
+  FLAT // value is a flat rupee amount
+}
+
+model Coupon {
+  id     String     @id @default(cuid())
+  code   String     @unique // stored uppercase, matched case-insensitively by the API
+  type   CouponType
+  value  Decimal    @db.Decimal(10, 2)
+
+  // Optional guardrails — all nullable/omittable, meaning "no restriction"
+  minOrderValue Decimal?  @db.Decimal(10, 2)
+  maxDiscount   Decimal?  @db.Decimal(10, 2) // caps the discount for PERCENT coupons
+  usageLimit    Int? // null = unlimited total redemptions
+  timesUsed     Int       @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("coupons")
+}
+
 model Order {
   id     String      @id @default(cuid())
   status OrderStatus @default(PENDING)
 
   subtotal Decimal @db.Decimal(10, 2)
+  discount Decimal @db.Decimal(10, 2) @default(0)
   total    Decimal @db.Decimal(10, 2)
 
   userId String
@@ -283,6 +346,9 @@ model Order {
 
   addressId String?
   address   Address? @relation(fields: [addressId], references: [id])
+
+  couponId String?
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
 
   items   OrderItem[]
   payment Payment?

@@ -219,7 +219,7 @@ export default function ContactSection() {
       <div className="max-w-4xl mx-auto px-5 sm:px-8 py-14 sm:py-20">
         {/* Catchy line above the form */}
         <p className="text-center text-red-400 text-sm sm:text-base font-semibold tracking-wide mb-8">
-          Got a project in mind? Fill out the form below — we're already listening.
+          Got a question in mind? Fill out the form below — we're already listening.
         </p>
 
         {/* Form */}

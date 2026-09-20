@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const Razorpay = require("razorpay");
 const { prisma } = require("../lib/prisma");
 const { sendOrderConfirmationEmail, sendLowStockAlert, LOW_STOCK_THRESHOLD } = require("../lib/email");
+const { evaluateCoupon } = require("./coupons");
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ const razorpay = new Razorpay({
 // needs to open the Razorpay checkout popup.
 router.post("/", async (req, res) => {
   try {
-    const { userId, address } = req.body;
+    const { userId, address, couponCode } = req.body;
     if (!userId) return res.status(400).json({ error: "userId is required" });
 
     const cartItems = await prisma.cartItem.findMany({
@@ -55,7 +56,25 @@ router.post("/", async (req, res) => {
       (sum, item) => sum + Number(item.product.price) * item.quantity,
       0
     );
-    const total = subtotal; // add shipping/tax logic here later if needed
+
+    // Re-validate the coupon server-side — never trust a discount amount
+    // the client might send. If the code no longer applies (expired, over
+    // its usage limit, cart changed since it was applied at checkout), the
+    // order simply proceeds without a discount rather than failing outright.
+    let discount = 0;
+    let couponId = null;
+    let couponResult = null;
+    if (couponCode) {
+      couponResult = await evaluateCoupon(couponCode, subtotal);
+      if (couponResult.valid) {
+        discount = couponResult.discount;
+        couponId = couponResult.coupon.id;
+      } else {
+        return res.status(400).json({ error: couponResult.message || "Coupon can no longer be applied" });
+      }
+    }
+
+    const total = Math.max(subtotal - discount, 0); // add shipping/tax logic here later if needed
 
     let addressId = null;
     if (address) {
@@ -70,7 +89,9 @@ router.post("/", async (req, res) => {
         userId,
         addressId,
         subtotal,
+        discount,
         total,
+        couponId,
         status: "PENDING",
         items: {
           create: cartItems.map((item) => ({
@@ -81,6 +102,15 @@ router.post("/", async (req, res) => {
         },
       },
     });
+
+    // Reserve the redemption now, at order-creation time, not at payment
+    // verification — this stops two people racing for the last few uses of
+    // a limited coupon from both succeeding. If the payment is later never
+    // completed, the order just stays PENDING; we don't refund the usage
+    // slot, matching how stock isn't refunded for an abandoned order either.
+    if (couponId) {
+      await prisma.coupon.update({ where: { id: couponId }, data: { timesUsed: { increment: 1 } } });
+    }
 
     // Razorpay wants the amount in the smallest currency unit (paise for INR)
     const razorpayOrder = await razorpay.orders.create({
@@ -198,7 +228,7 @@ router.post("/verify", async (req, res) => {
     // into an error shown to a customer who already paid.
     const fullOrder = await prisma.order.findUnique({
       where: { id: order.id },
-      include: { items: { include: { product: true } }, user: true },
+      include: { items: { include: { product: true } }, user: true, coupon: true },
     });
     sendOrderConfirmationEmail({ order: fullOrder, user: fullOrder.user }).catch(() => {});
 
@@ -212,6 +242,68 @@ router.post("/verify", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to verify payment" });
+  }
+});
+
+// POST /api/orders/track — { orderId, contact } — guest order tracking,
+// no login required. "contact" can be the email on the account or the
+// phone number used at checkout; either has to match, or nothing is
+// returned. Deliberately returns the SAME generic error whether the order
+// doesn't exist or the contact just doesn't match it — telling those apart
+// would let someone enumerate valid order IDs by trial and error.
+router.post("/track", async (req, res) => {
+  try {
+    const { orderId, contact } = req.body;
+    if (!orderId || !contact) {
+      return res.status(400).json({ error: "Order ID and email or phone are required" });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId.trim() },
+      include: {
+        items: { include: { product: { select: { name: true, slug: true } } } },
+        address: true,
+        user: { select: { email: true, phone: true } },
+        coupon: { select: { code: true } },
+      },
+    });
+
+    const NOT_FOUND = { error: "No order found matching that Order ID and contact detail" };
+    if (!order) return res.status(404).json(NOT_FOUND);
+
+    const contactNormalized = contact.trim().toLowerCase();
+    const matchesEmail = order.user.email?.toLowerCase() === contactNormalized;
+    const matchesPhone =
+      order.user.phone === contact.trim() || order.address?.phone === contact.trim();
+
+    if (!matchesEmail && !matchesPhone) {
+      return res.status(404).json(NOT_FOUND);
+    }
+
+    // Only what's needed to show order status — no user object, no
+    // address beyond city/state (not the full street address to a
+    // still-anonymous requester).
+    res.json({
+      id: order.id,
+      status: order.status,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      total: order.total,
+      coupon: order.coupon,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
+      items: order.items.map((i) => ({
+        id: i.id,
+        quantity: i.quantity,
+        price: i.price,
+        product: i.product,
+      })),
+      shippingCity: order.address?.city ?? null,
+      shippingState: order.address?.state ?? null,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to look up order" });
   }
 });
 
@@ -244,7 +336,7 @@ router.get("/:orderId", async (req, res) => {
     const { userId } = req.query;
     const order = await prisma.order.findUnique({
       where: { id: req.params.orderId },
-      include: { items: { include: { product: true } }, address: true },
+      include: { items: { include: { product: true } }, address: true, coupon: true },
     });
 
     if (!order || order.userId !== userId) {

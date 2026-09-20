@@ -9,8 +9,12 @@ import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Header from "./Header";
 import WishlistButton from "./WishlistButton";
+import PincodeDeliveryEstimate from "./PincodeDeliveryEstimate";
+import RelatedProducts from "./RelatedProducts";
+import ReviewsSection from "./ReviewsSection";
+import StarRating from "./StarRating";
 
-export default function ProductDetailPage({ item, category, categoryName, prevSlug, nextSlug }) {
+export default function ProductDetailPage({ item, category, categoryName, prevSlug, nextSlug, relatedItems }) {
   const thumbs = item.images?.length ? item.images : item.image ? [item.image] : [];
   const [activeThumb, setActiveThumb] = useState(0);
   const [showZoom, setShowZoom] = useState(false);
@@ -23,6 +27,7 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
   const [added, setAdded] = useState(false);
   const [addedOnce, setAddedOnce] = useState(false);
   const [wishlisted, setWishlisted] = useState(false);
+  const [ratingSummary, setRatingSummary] = useState(null); // { average, count }
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -33,6 +38,17 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
       })
       .catch(() => {});
   }, [status, item.id]);
+
+  useEffect(() => {
+    fetch(`/api/reviews?productId=${item.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.average === "number") {
+          setRatingSummary({ average: data.average, count: data.count });
+        }
+      })
+      .catch(() => {});
+  }, [item.id]);
 
   async function handleAddToCart() {
     if (status !== "authenticated") {
@@ -204,6 +220,16 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 heading-font uppercase leading-tight mb-2">
               {item.name}
             </h1>
+
+            {ratingSummary && ratingSummary.count > 0 && (
+              <a href="#reviews" className="inline-flex items-center gap-2 mb-2 hover:opacity-80">
+                <StarRating value={ratingSummary.average} size={14} />
+                <span className="text-xs text-gray-500">
+                  {ratingSummary.average.toFixed(1)} ({ratingSummary.count} review{ratingSummary.count === 1 ? "" : "s"})
+                </span>
+              </a>
+            )}
+
             <p className="text-xs text-gray-400 mono mb-5">
               Manufactured by Taraknath Engineering Works · ISO 9001:2015
             </p>
@@ -239,6 +265,8 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
                 </div>
               ))}
             </div>
+
+            {item.isBuyable && <PincodeDeliveryEstimate />}
 
             {item.isBuyable && (
               <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -314,6 +342,10 @@ export default function ProductDetailPage({ item, category, categoryName, prevSl
             </div>
           </div>
         </div>
+
+        <ReviewsSection productId={item.id} />
+
+        <RelatedProducts title="You May Also Like" items={relatedItems} categorySlug={category} />
       </div>
     </div>
   );

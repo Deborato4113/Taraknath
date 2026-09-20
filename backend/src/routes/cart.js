@@ -24,7 +24,12 @@ async function getCartPayload(userId) {
   const rows = await prisma.cartItem.findMany({
     where: { userId },
     include: {
-      product: { include: { images: { orderBy: { position: "asc" }, take: 1 } } },
+      product: {
+        include: {
+          images: { orderBy: { position: "asc" }, take: 1 },
+          category: { select: { slug: true } },
+        },
+      },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -39,6 +44,9 @@ async function getCartPayload(userId) {
       price: row.product.price,
       stock: row.product.stock,
       image: row.product.images[0]?.url ?? null,
+      // Used by the cart page's "Frequently bought together" section to
+      // fetch same-category recommendations without a second round trip.
+      categorySlug: row.product.category?.slug ?? null,
     },
   }));
 

@@ -94,6 +94,20 @@ export default function OrderConfirmationPage({ params }) {
                   </span>
                 </div>
               ))}
+              {Number(order.discount) > 0 && (
+                <>
+                  <div className="flex justify-between items-center px-4 py-2 text-sm border-t border-gray-100">
+                    <span className="text-gray-500">Subtotal</span>
+                    <span className="text-gray-700">₹{Number(order.subtotal).toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-2 text-sm">
+                    <span className="text-green-700">
+                      Discount{order.coupon ? ` (${order.coupon.code})` : ""}
+                    </span>
+                    <span className="text-green-700">−₹{Number(order.discount).toLocaleString("en-IN")}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-center px-4 py-3 bg-gray-50 text-sm font-bold">
                 <span>{display.totalLabel}</span>
                 <span>₹{Number(order.total).toLocaleString("en-IN")}</span>

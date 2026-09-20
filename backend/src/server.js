@@ -11,6 +11,8 @@ const adminRouter = require("./routes/admin");
 const addressesRouter = require("./routes/addresses");
 const wishlistRouter = require("./routes/wishlist");
 const quotesRouter = require("./routes/quotes");
+const couponsRouter = require("./routes/coupons");
+const reviewsRouter = require("./routes/reviews");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -37,6 +39,8 @@ app.use("/api/admin", adminRouter);
 app.use("/api/addresses", addressesRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/quotes", quotesRouter);
+app.use("/api/coupons", couponsRouter);
+app.use("/api/reviews", reviewsRouter);
 
 app.listen(PORT, () => {
   console.log(`Backend API running on http://localhost:${PORT}`);

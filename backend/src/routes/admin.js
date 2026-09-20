@@ -325,4 +325,99 @@ router.put("/quote-requests/:id/status", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────
+// COUPONS
+// ─────────────────────────────────────────────
+
+// GET /api/admin/coupons
+router.get("/coupons", async (req, res) => {
+  try {
+    const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
+    res.json(coupons);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch coupons" });
+  }
+});
+
+// POST /api/admin/coupons
+// { code, type: "PERCENT"|"FLAT", value, minOrderValue, maxDiscount, usageLimit, expiresAt, isActive }
+router.post("/coupons", async (req, res) => {
+  try {
+    const { code, type, value, minOrderValue, maxDiscount, usageLimit, expiresAt, isActive } = req.body;
+
+    if (!code || !type || value == null) {
+      return res.status(400).json({ error: "code, type and value are required" });
+    }
+    if (!["PERCENT", "FLAT"].includes(type)) {
+      return res.status(400).json({ error: "type must be PERCENT or FLAT" });
+    }
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        code: code.trim().toUpperCase(),
+        type,
+        value: Number(value),
+        minOrderValue: minOrderValue === "" || minOrderValue == null ? null : Number(minOrderValue),
+        maxDiscount: maxDiscount === "" || maxDiscount == null ? null : Number(maxDiscount),
+        usageLimit: usageLimit === "" || usageLimit == null ? null : Number(usageLimit),
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        isActive: isActive !== false,
+      },
+    });
+
+    res.status(201).json(coupon);
+  } catch (err) {
+    console.error(err);
+    if (err.code === "P2002") return res.status(409).json({ error: "That coupon code already exists" });
+    res.status(500).json({ error: "Failed to create coupon" });
+  }
+});
+
+// PUT /api/admin/coupons/:id — same body shape as POST; also used just to
+// toggle isActive on/off from the list view.
+router.put("/coupons/:id", async (req, res) => {
+  try {
+    const { code, type, value, minOrderValue, maxDiscount, usageLimit, expiresAt, isActive } = req.body;
+
+    const data = {};
+    if (code !== undefined) data.code = code.trim().toUpperCase();
+    if (type !== undefined) data.type = type;
+    if (value !== undefined) data.value = Number(value);
+    if (minOrderValue !== undefined) data.minOrderValue = minOrderValue === "" || minOrderValue == null ? null : Number(minOrderValue);
+    if (maxDiscount !== undefined) data.maxDiscount = maxDiscount === "" || maxDiscount == null ? null : Number(maxDiscount);
+    if (usageLimit !== undefined) data.usageLimit = usageLimit === "" || usageLimit == null ? null : Number(usageLimit);
+    if (expiresAt !== undefined) data.expiresAt = expiresAt ? new Date(expiresAt) : null;
+    if (isActive !== undefined) data.isActive = !!isActive;
+
+    const coupon = await prisma.coupon.update({ where: { id: req.params.id }, data });
+    res.json(coupon);
+  } catch (err) {
+    console.error(err);
+    if (err.code === "P2025") return res.status(404).json({ error: "Coupon not found" });
+    if (err.code === "P2002") return res.status(409).json({ error: "That coupon code already exists" });
+    res.status(500).json({ error: "Failed to update coupon" });
+  }
+});
+
+// DELETE /api/admin/coupons/:id
+router.delete("/coupons/:id", async (req, res) => {
+  try {
+    await prisma.coupon.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    if (err.code === "P2025") return res.status(404).json({ error: "Coupon not found" });
+    // A coupon already used on real orders can't be deleted (Order.couponId
+    // has no onDelete: Cascade, on purpose — deleting it shouldn't corrupt
+    // order history). Deactivate it instead.
+    if (err.code === "P2003") {
+      return res.status(409).json({
+        error: "Can't delete a coupon that's already been used on an order. Deactivate it instead.",
+      });
+    }
+    res.status(500).json({ error: "Failed to delete coupon" });
+  }
+});
+
 module.exports = router;

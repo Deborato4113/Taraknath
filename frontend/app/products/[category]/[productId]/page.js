@@ -80,6 +80,11 @@ export default async function Page({ params }) {
   const prevSlug = currentIndex > 0 ? items[currentIndex - 1].slug : null;
   const nextSlug = currentIndex < items.length - 1 ? items[currentIndex + 1].slug : null;
 
+  // "You may also like" — other buyable products in the same category,
+  // excluding the one being viewed. We already have the whole category's
+  // product list in hand (used for prev/next above), so no extra fetch.
+  const relatedItems = items.filter((p) => p.slug !== slug && p.isBuyable).slice(0, 4);
+
   return (
     <ProductDetailPage
       item={product}
@@ -87,6 +92,7 @@ export default async function Page({ params }) {
       categoryName={CATEGORY_NAMES[category]}
       prevSlug={prevSlug}
       nextSlug={nextSlug}
+      relatedItems={relatedItems}
     />
   );
 }

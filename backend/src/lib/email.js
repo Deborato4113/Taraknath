@@ -93,7 +93,12 @@ async function sendOrderConfirmationEmail({ order, user }) {
       <p>Your payment has been received and your order is confirmed.</p>
       <p><strong>Order ID:</strong> ${order.id}</p>
       ${itemsTable(order.items)}
-      <p style="margin-top:16px;font-size:16px;"><strong>Total Paid: ${money(order.total)}</strong></p>
+      ${
+        order.discount && Number(order.discount) > 0
+          ? `<p style="margin-top:16px;">Subtotal: ${money(order.subtotal)}<br/>Discount${order.coupon ? ` (${escapeHtml(order.coupon.code)})` : ""}: -${money(order.discount)}</p>`
+          : ""
+      }
+      <p style="margin-top:${order.discount && Number(order.discount) > 0 ? "4" : "16"}px;font-size:16px;"><strong>Total Paid: ${money(order.total)}</strong></p>
       <p style="margin-top:24px;color:#666;font-size:13px;">
         We'll email you again once your order ships. You can also check its status any time
         under "My Orders" on the website.
